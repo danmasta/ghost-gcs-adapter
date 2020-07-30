@@ -90,7 +90,7 @@ You can also pass in a custom credential key file path or credentials object via
         "active": "gcs",
         "gcs": {
             "storageOptions": {
-                // ...
+
             }
         }
     }
