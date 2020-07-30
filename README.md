@@ -50,9 +50,8 @@ Keep in mind that the default ghost docker image creates a [volume](https://gith
 
 ### Configuration
 #### JSON via [ghost config](https://ghost.org/docs/concepts/config/)
-```json
+```js
 {
-    ...,
     "storage": {
         "active": "gcs",
         "gcs": {
@@ -85,14 +84,13 @@ GOOGLE_APPLICATION_CREDENTIALS=/var/secrets/google/key.json
 ```
 
 You can also pass in a custom credential key file path or credentials object via the `storageOptions` setting, see [here](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions):
-```json
+```js
 {
-    ...,
     "storage": {
         "active": "gcs",
         "gcs": {
             "storageOptions": {
-                ...
+                // ...
             }
         }
     }
