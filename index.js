@@ -30,7 +30,6 @@ class GhostGCSError extends Error {
     }
 }
 
-
 class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
 
     constructor (opts) {
