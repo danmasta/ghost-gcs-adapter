@@ -1,0 +1,47 @@
+{
+  "name": "@danmasta/ghost-gcs-adapter",
+  "version": "0.0.1",
+  "author": "Daniel Smith <dannmasta@gmail.com>",
+  "description": "Ghost GCS Storage Adapter",
+  "license" : "MIT",
+  "keywords": [
+    "ghost",
+    "blog",
+    "content",
+    "cms",
+    "gcs",
+    "adapter",
+    "storage"
+  ],
+  "main": "index.js",
+  "files": [
+    "index.js"
+  ],
+  "scripts": {
+    "test": "mocha tests",
+    "coverage": "nyc --reporter=lcov mocha tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danmasta/ghost-gcs-adapter.git"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1",
+    "mocha": "^8.0.1",
+    "nyc": "^15.1.0"
+  },
+  "engines": {
+    "npm": ">=3"
+  },
+  "dependencies": {
+    "@danmasta/interpolate": "0.0.6",
+    "@google-cloud/storage": "^5.1.2",
+    "ghost-storage-base": "0.0.5",
+    "lodash": "^4.17.19"
+  }
+}
