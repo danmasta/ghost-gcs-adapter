@@ -1,9 +1,9 @@
 {
   "name": "@danmasta/ghost-gcs-adapter",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": "Daniel Smith <dannmasta@gmail.com>",
   "description": "Ghost GCS Storage Adapter",
-  "license" : "MIT",
+  "license": "MIT",
   "keywords": [
     "ghost",
     "blog",
