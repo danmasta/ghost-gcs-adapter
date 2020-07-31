@@ -27,8 +27,8 @@ name | type | description
 `hashLength` | *`number`* | Length of hash to use in hash string output. This slice is taken from the end of the string. Setting `0` will use the full hash. Default is `16`
 `prefix` | *`string`* | Prefix to use for gcs bucket path. If set, the gcs file path will become: `$prefix/$dir/$filename`. Default is `undefined`
 `unique` | *`boolean`* | Wether or not to create unique filenames for duplicate uploads. Default is `true`
-`template` | *`string`* | Template string for file names. If `hash` enabled, default is: `{{hashstr}}{{ext}}`, otherwise: `{{basename}}{{ext}}`
-`incremental` | *`boolean`* | If `true` and `unique` is enabled it will use the ghost default incremental algorithm for file names, appending an integer to the basename. This can be really slow because it has to check if the filepath exists in the bucket for each iteration. If `false` and `unique` is enabled, it will just append random bytes to either the hash or the basename. Default is `false`
+`template` | *`string`* | Template string for file names. If `hash` enabled default is: `{{hashstr}}{{ext}}`, otherwise: `{{basename}}{{ext}}`
+`incremental` | *`boolean`* | If `true` and `unique` is enabled it will use the ghost default incremental algorithm for file names, appending an integer to the basename. This can be really slow because it has to check if the filepath exists in the bucket for each iteration. If `false` and `unique` is enabled it will just append random bytes to either the hash or the basename. Default is `false`
 
 ### Installation
 There are currently [3 places](https://github.com/TryGhost/Ghost/blob/3.26.1/core/server/services/adapter-manager/index.js#L7) where ghost will look for storage adapters by default:
@@ -42,7 +42,7 @@ This means you need to install the plugin and it's dependencies at one of those 
 ```dockerfile
 RUN mkdir -p /tmp/gcs ${GHOST_CONTENT}/adapters/storage/gcs && \
     wget -O - "$(npm view @danmasta/ghost-gcs-adapter dist.tarball)" | tar xz -C /tmp/gcs && \
-    npm install --prefix /tmp/gcs/package --silent --only=production --no-optional && \
+    npm install --prefix /tmp/gcs/package --silent --only=production --no-optional --no-progress && \
     mv /tmp/gcs/package/* ${GHOST_CONTENT}/adapters/storage/gcs
 ```
 
