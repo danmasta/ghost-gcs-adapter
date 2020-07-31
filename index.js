@@ -38,9 +38,6 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
 
         this.opts = opts = _.defaults(opts, defaults);
 
-        this.storage = new Storage(opts.storageOptions);
-        this.bucket = this.storage.bucket(opts.bucket);
-
         if (!_.isString(opts.prefix)) {
             opts.prefix = '';
         }
@@ -56,6 +53,9 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
                 opts.template = '{{basename}}{{ext}}';
             }
         }
+
+        this.storage = new Storage(opts.storageOptions);
+        this.bucket = this.storage.bucket(opts.bucket);
 
     }
 
@@ -253,11 +253,9 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     }
 
     serve () {
-
         return function serveGhostGCSAdapter(req, res, next) {
             next();
         }
-
     }
 
     delete (file) {
