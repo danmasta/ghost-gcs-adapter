@@ -69,7 +69,7 @@ Keep in mind that the default ghost docker image creates a [volume](https://gith
 #### ENV Variables
 ```bash
 storage__active=gcs
-storage__gcs__bucket=danmasta-ghost-default-prod
+storage__gcs__bucket=my-gcs-bucket
 storage__gcs__host=storage.googleapis.com
 storage__gcs__protocol=https
 storage__gcs__hash=true
