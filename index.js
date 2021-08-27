@@ -96,13 +96,15 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     // returns an absolute url path
     getGCSPathAbsolute (image) {
 
-        let url = new URL(image.gcsPathRelative, this.opts.protocol + '://' + this.opts.host);
+        let str = this.opts.protocol + '://';
 
         if (this.opts.host === defaults.host) {
-            url.pathname = this.opts.bucket + url.pathname;
+            str += path.join(this.opts.host, this.opts.bucket, image.targetDir, image.name);
+        } else {
+            str += path.join(this.opts.host, image.targetDir, image.name);
         }
 
-        return url.toString();
+        return this.sanitizeUrlPath(str);
 
     }
 
@@ -110,9 +112,9 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     // returns a relative url path
     getGCSPathRelative (image) {
 
-        let url = new URL(path.join(image.targetDir, image.name), this.opts.protocol + '://' + this.opts.host);
+        let str = path.join(image.targetDir, image.name);
 
-        return url.pathname.slice(1);
+        return this.sanitizeUrlPath(str);
 
     }
 
@@ -200,9 +202,12 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
             return image;
 
         }).then(image => {
+
             image.gcsPathRelative = this.getGCSPathRelative(image);
             image.gcsPathAbsolute = this.getGCSPathAbsolute(image);
+
             return image;
+
         });
 
     }
@@ -292,17 +297,22 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     // converts all slashes to forward slashes, adds prefix if needed
     // accepts an object with a path param: { path: '/string' }
     // or a plain path string: '/string'
-    // retuns a normalized, relative url string
+    // retuns a normalized, relative or absolute url string
     sanitizeUrlPath (file) {
 
         let str = _.isPlainObject(file) ? file.path : file;
 
-        if (str.indexOf(this.opts.prefix) !== 0) {
+        if (!str.includes('://') && (str.indexOf(this.opts.prefix) !== 0)) {
             str = path.join(this.opts.prefix, str);
         }
 
-        return str.replace(/[\\\/]+/g, '/').replace(/^[\\\/]+/, '');
+        return str.replace(/(?<!:)\/\/+/g, '/').replace(/^[\\\/]+/, '');
 
+    }
+
+    // override default ghost filename sanitization (add space and hyphen)
+    getSanitizedFileName (str) {
+        return str.replace(/[^\w@. -]/g, '-');
     }
 
 }
