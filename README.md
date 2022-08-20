@@ -40,10 +40,12 @@ There are currently [3 places](https://github.com/TryGhost/Ghost/blob/3.26.1/cor
 
 This means you need to install the plugin and it's dependencies at one of those locations. If you are using a `Dockerfile`, you can do so like this:
 ```dockerfile
-RUN mkdir -p /tmp/gcs ${GHOST_CONTENT}/adapters/storage/gcs && \
-    wget -O - "$(npm view @danmasta/ghost-gcs-adapter dist.tarball)" | tar xz -C /tmp/gcs && \
+ENV GHOST_INSTALL /var/lib/ghost
+
+RUN mkdir -p /tmp/gcs ${GHOST_INSTALL}/current/core/server/adapters/storage/gcs && \
+    curl -s "$(npm view @danmasta/ghost-gcs-adapter dist.tarball)" | tar xz -C /tmp/gcs && \
     npm install --prefix /tmp/gcs/package --silent --only=production --no-optional --no-progress && \
-    mv /tmp/gcs/package/* ${GHOST_CONTENT}/adapters/storage/gcs
+    mv /tmp/gcs/package/* ${GHOST_INSTALL}/current/core/server/adapters/storage/gcs
 ```
 
 Keep in mind that the default ghost docker image creates a [volume](https://github.com/docker-library/ghost/blob/83cacc75655bf26aae65465d66fd1b981e9203d5/3/alpine/Dockerfile#L66) at your ghost content path. This means any changes after the `VOLUME` declaration will be discarded, and you can't add new files to the content dir. You will need to install to another path, or move the files during a run time script after volume mounting.
