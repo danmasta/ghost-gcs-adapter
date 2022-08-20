@@ -10,6 +10,7 @@ Features:
 * Asset path prefixes
 * Support for generating unique file names on duplicates
 * Custom file name templating
+* Works with ghost versions v4.x and v5.x
 
 ## About
 I wanted to deploy [ghost](https://ghost.org/) in a HA environment using gcs as a storage backend, but the current options were out of date or didn't support custom hostnames and/or hashing. This library lets you store ghost assets to gcs with many options for using path prefixes, custom domains, content hashing, and file name templating.
@@ -34,7 +35,7 @@ name | type | description
 There are currently [3 places](https://github.com/TryGhost/Ghost/blob/3.26.1/core/server/services/adapter-manager/index.js#L7) where ghost will look for storage adapters by default:
 ```bash
 /var/lib/ghost/current/node_modules/storage
-/var/lib/ghost/content/adapters/storage -- content path setting
+/var/lib/ghost/content/adapters/storage - (content path setting)
 /var/lib/ghost/current/core/server/adapters/storage
 ```
 
