@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 const interpolate = require('@danmasta/interpolate');
+const asciiCharMap = require('./lib/ascii-char-map');
 
 const defaults = {
     bucket: undefined,
@@ -17,7 +18,8 @@ const defaults = {
     prefix: undefined,
     unique: true,
     template: undefined,
-    incremental: false
+    incremental: false,
+    sanitize: false
 };
 
 class GhostGCSError extends Error {
@@ -239,7 +241,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     }
 
     // save file to gcs bucket
-    // accepts a ghost image obect and optional targetDir
+    // accepts a ghost image object and optional targetDir
     // returns a promise that resolves with an absolute url
     save (image, targetDir) {
 
@@ -294,25 +296,87 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
 
     }
 
+    // remove leading slashses, add prefix if not set
+    normalizeRelativePath (str) {
+
+        // remove leading slashes
+        str = str.replace(/^[\\\/]+/, '');
+
+        if (str.indexOf(this.opts.prefix) !== 0) {
+            str = path.join(this.opts.prefix, str);
+        }
+
+        // convert all backslashes
+        str = str.replace(/[\\]+/g, '/');
+
+        return str;
+
+    }
+
+
+    foldToASCII (str) {
+
+        let res = '';
+
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 128) {
+                res += str[i];
+            } else {
+                if (asciiCharMap[code] != undefined) {
+                    res += asciiCharMap[code];
+                } else {
+                    res += str[i];
+                }
+            }
+        }
+
+        return res;
+
+    }
+
+    // https://www.ryadel.com/en/javascript-remove-xml-invalid-chars-characters-string-utf8-unicode-regex/
+    sanitize (str) {
+
+        // xml control characters
+        str = str.replace(/[\x7F-\x84\x86-\x9F]/g, '');
+
+        // gcs wildcard and versioning characters
+        str = str.replace(/[\[\]*?#]/g, '');
+
+        // replace whitespace, fold to ascii
+        if (this.opts.sanitize) {
+            str = str.replace(/\s+/g, '-');
+            str = this.foldToASCII(str);
+        }
+
+        // convert all slashes to forward slash
+        str = str.replace(/(?<!:)\/\/+|\\+/g, '/');
+
+        return str;
+
+    }
+
     // converts all slashes to forward slashes, adds prefix if needed
     // accepts an object with a path param: { path: '/string' }
     // or a plain path string: '/string'
     // retuns a normalized, relative or absolute url string
-    sanitizeUrlPath (file) {
+    // sanitizeUrlPath (file) {
 
-        let str = _.isPlainObject(file) ? file.path : file;
+    //     let str = _.isPlainObject(file) ? file.path : file;
 
-        if (!str.includes('://') && (str.indexOf(this.opts.prefix) !== 0)) {
-            str = path.join(this.opts.prefix, str);
-        }
+    //     if (!str.includes('://') && (str.indexOf(this.opts.prefix) !== 0)) {
+    //         str = path.join(this.opts.prefix, str);
+    //     }
 
-        return str.replace(/(?<!:)\/\/+/g, '/').replace(/^[\\\/]+/, '');
+    //     return str.replace(/(?<!:)\/\/+/g, '/').replace(/^[\\\/]+/, '');
 
-    }
+    // }
 
     // override default ghost filename sanitization (add space and hyphen)
     getSanitizedFileName (str) {
-        return str.replace(/[^\w@. -]/g, '-');
+        // return str.replace(/[^\w@. -]/g, '-');
+        return this.sanitize(str);
     }
 
 }
