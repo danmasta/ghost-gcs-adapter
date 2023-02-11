@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
 const interpolate = require('@danmasta/interpolate');
+const asciiCharMap = require('./lib/ascii-char-map');
 
 const defaults = {
     bucket: undefined,
@@ -17,16 +18,18 @@ const defaults = {
     prefix: undefined,
     unique: true,
     template: undefined,
-    incremental: false
+    incremental: false,
+    asciiFolding: true,
+    lowercase: false
 };
 
 class GhostGCSError extends Error {
     constructor (str) {
-        let msg = `Ghost GCS Adapter Error: ${str}`
+        let msg = `Ghost GCS Adapter Error: ${str}`;
         super(msg);
         Error.captureStackTrace(this, GhostGCSError);
-        this.name = 'GhostGCSAdapterError'
-        this.code = 'GCSADAPTERERROR'
+        this.name = 'GhostGCSAdapterError';
+        this.code = 'GCSADAPTERERROR';
     }
 }
 
@@ -104,7 +107,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
             str += path.join(this.opts.host, image.targetDir, image.name);
         }
 
-        return this.sanitizeUrlPath(str);
+        return this.sanitize(str);
 
     }
 
@@ -114,7 +117,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
 
         let str = path.join(image.targetDir, image.name);
 
-        return this.sanitizeUrlPath(str);
+        return this.sanitize(str);
 
     }
 
@@ -216,7 +219,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     // returns promise that resolves with true or false
     exists (filename, targetDir) {
 
-        let filepath = this.sanitizeUrlPath(path.join(targetDir || '', filename));
+        let filepath = this.sanitize(path.join(targetDir || '', filename));
 
         return this.bucket.file(filepath).exists().then(res => {
             return res[0];
@@ -227,7 +230,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     // save a raw buffer at specified path
     saveRaw (buffer, filePath) {
 
-        let gcsPathRelative = this.sanitizeUrlPath(filePath);
+        let gcsPathRelative = this.sanitize(filePath);
         let gcsPathAbsolute = this.getGCSPathAbsolute({ gcsPathRelative });
 
         return this.bucket.file(gcsPathRelative).save(buffer).then(() => {
@@ -239,7 +242,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
     }
 
     // save file to gcs bucket
-    // accepts a ghost image obect and optional targetDir
+    // accepts a ghost image object and optional targetDir
     // returns a promise that resolves with an absolute url
     save (image, targetDir) {
 
@@ -265,7 +268,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
 
     delete (file) {
 
-        return this.bucket.file(this.sanitizeUrlPath(file)).delete().catch(err => {
+        return this.bucket.file(this.sanitize(file)).delete().catch(err => {
             throw new GhostGCSError(err.message);
         });
 
@@ -276,7 +279,7 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
         return new Promise((resolve, reject) => {
 
             let res = []
-            let stream = this.bucket.file(this.sanitizeUrlPath(file)).createReadStream();
+            let stream = this.bucket.file(this.sanitize(file)).createReadStream();
 
             stream.on('error', err => {
                 reject(new GhostGCSError(err.message));
@@ -294,25 +297,77 @@ class GhostStorageAdapterGCS extends GhostStorageAdapterBase {
 
     }
 
-    // converts all slashes to forward slashes, adds prefix if needed
-    // accepts an object with a path param: { path: '/string' }
-    // or a plain path string: '/string'
-    // retuns a normalized, relative or absolute url string
-    sanitizeUrlPath (file) {
+    // remove leading slashses, add prefix if not set
+    normalizeRelativePath (str) {
 
-        let str = _.isPlainObject(file) ? file.path : file;
+        // remove leading slashes
+        str = str.replace(/^[\\\/]+/, '');
 
-        if (!str.includes('://') && (str.indexOf(this.opts.prefix) !== 0)) {
+        if (str.indexOf(this.opts.prefix) !== 0) {
             str = path.join(this.opts.prefix, str);
         }
 
-        return str.replace(/(?<!:)\/\/+/g, '/').replace(/^[\\\/]+/, '');
+        // convert all backslashes
+        str = str.replace(/[\\]+/g, '/');
+
+        return str;
 
     }
 
-    // override default ghost filename sanitization (add space and hyphen)
+
+    foldToASCII (str) {
+
+        let res = '';
+
+        for (let i = 0; i < str.length; i++) {
+            let code = str.charCodeAt(i);
+            if (code < 128) {
+                res += str[i];
+            } else {
+                if (asciiCharMap[code] != undefined) {
+                    res += asciiCharMap[code];
+                } else {
+                    res += str[i];
+                }
+            }
+        }
+
+        return res;
+
+    }
+
+    sanitize (str) {
+
+        // strip xml control characters
+        // https://cloud.google.com/storage/docs/objects#naming
+        str = str.replace(/[\x7F-\x84\x86-\x9F]/g, '');
+
+        // strip gcs wildcard and versioning characters
+        // https://cloud.google.com/storage/docs/objects#naming
+        str = str.replace(/[\[\]*?#]/g, '');
+
+        // replace whitespace with hyphens
+        str = str.replace(/\s+/g, '-');
+
+        // fold to ascii
+        if (this.opts.asciiFolding) {
+            str = this.foldToASCII(str);
+        }
+
+        if (this.opts.lowercase) {
+            str = str.toLowerCase();
+        }
+
+        // convert all slashes to forward slash
+        str = str.replace(/(?<!:)\/\/+|\\+/g, '/');
+
+        return str;
+
+    }
+
+    // override default ghost filename sanitization
     getSanitizedFileName (str) {
-        return str.replace(/[^\w@. -]/g, '-');
+        return this.sanitize(str);
     }
 
 }

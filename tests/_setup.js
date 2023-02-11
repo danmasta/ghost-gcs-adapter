@@ -5,6 +5,10 @@ beforeEach(() => {
     global.assert = chai.assert;
     global.expect = chai.expect;
     global.should = chai.should();
+    global.GhostGCSAdapter = GhostGCSAdapter;
+    global.adapter = new GhostGCSAdapter({
+        bucket: 'test'
+    });
     global.images = {
         test: {
             fieldname: 'file',
