@@ -10,6 +10,7 @@ Features:
 * Asset path prefixes
 * Support for generating unique file names on duplicates
 * Custom file name templating
+* Sanitization of file names
 
 ## About
 I wanted to deploy [ghost](https://ghost.org/) in a HA environment using gcs as a storage backend, but the current options were out of date or didn't support custom hostnames and/or hashing. This library lets you store ghost assets to gcs with many options for using path prefixes, custom domains, content hashing, and file name templating.
@@ -29,6 +30,13 @@ name | type | description
 `unique` | *`boolean`* | Wether or not to create unique filenames for duplicate uploads. Default is `true`
 `template` | *`string`* | Template string for file names. If `hash` enabled default is: `{{hashstr}}{{ext}}`, otherwise: `{{basename}}{{ext}}`
 `incremental` | *`boolean`* | If `true` and `unique` is enabled it will use the ghost default incremental algorithm for file names, appending an integer to the basename. This can be really slow because it has to check if the filepath exists in the bucket for each iteration. If `false` and `unique` is enabled it will just append random bytes to either the hash or the basename. Default is `false`
+`asciiFolding` | *`boolean`* | If true converts all characters in the file name to their ascii equivalent, removing diacritic marks. Default is `true`
+`lowercase` | *`boolean`* | If true will convert all characters in the file name to lowercase. Default is `false`
+
+### Sanitization
+There is some default sanitization of file names that always happens and a couple optional features like ascii folding and lowercasing.
+
+The default sanitization includes removing xml control characters and GCS wildcard characters as noted [here](https://cloud.google.com/storage/docs/objects#naming) in the GCS documentation. It will also replace all whitespace with hypens, and convert all back slashes to forward slashes.
 
 ### Installation
 There are currently [3 places](https://github.com/TryGhost/Ghost/blob/3.26.1/core/server/services/adapter-manager/index.js#L7) where ghost will look for storage adapters by default:
