@@ -15,7 +15,8 @@
   ],
   "main": "index.js",
   "files": [
-    "index.js"
+    "index.js",
+    "lib/**/*"
   ],
   "scripts": {
     "test": "./node_modules/.bin/mocha tests",
