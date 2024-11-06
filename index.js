@@ -4,7 +4,7 @@ const Storage = require('@google-cloud/storage').Storage;
 const fs = require('fs');
 const crypto = require('crypto');
 const path = require('path');
-const interpolate = require('@danmasta/interpolate');
+const interpolate = require('interpolate');
 const asciiCharMap = require('./lib/ascii-char-map');
 
 const defaults = {
