@@ -42,27 +42,29 @@ The default sanitization includes removing xml control characters and GCS wildca
 
 ### Installation
 There are currently [3 places](https://github.com/TryGhost/Ghost/blob/3.26.1/core/server/services/adapter-manager/index.js#L7) where ghost will look for storage adapters by default:
-```bash
+```
 /var/lib/ghost/current/node_modules/storage
-/var/lib/ghost/content/adapters/storage - (content path setting)
+/var/lib/ghost/content/adapters/storage
 /var/lib/ghost/current/core/server/adapters/storage
 ```
 
 This means you need to install the plugin and it's dependencies at one of those locations. If you are using a `Dockerfile`, you can do so like this:
 ```dockerfile
-ENV GHOST_INSTALL /var/lib/ghost
-
-RUN mkdir -p /tmp/gcs ${GHOST_INSTALL}/current/core/server/adapters/storage/gcs && \
-    curl -s "$(npm view @danmasta/ghost-gcs-adapter dist.tarball)" | tar xz -C /tmp/gcs && \
-    npm install --prefix /tmp/gcs/package --silent --only=production --no-optional --no-progress && \
-    mv /tmp/gcs/package/* ${GHOST_INSTALL}/current/core/server/adapters/storage/gcs
+RUN mkdir -p /tmp/gcs && \
+    curl -fsSL "https://api.github.com/repos/danmasta/ghost-gcs-adapter/tarball/master" | tar xz --strip-components=1 -C /tmp/gcs && \
+    npm install --prefix /tmp/gcs --omit=dev --omit=optional --no-progress --loglevel error && \
+    mv /tmp/gcs "${GHOST_INSTALL}/current/core/server/adapters/storage"
+```
+If you want to pin to a specific [version](https://github.com/danmasta/ghost-gcs-adapter/tags) you can add the version ref to the tarball url:
+```sh
+"https://api.github.com/repos/danmasta/ghost-gcs-adapter/tarball/#v1.0.2"
 ```
 
-Keep in mind that the default ghost docker image creates a [volume](https://github.com/docker-library/ghost/blob/83cacc75655bf26aae65465d66fd1b981e9203d5/3/alpine/Dockerfile#L66) at your ghost content path. This means any changes after the `VOLUME` declaration will be discarded, and you can't add new files to the content dir. You will need to install to another path, or move the files during a run time script after volume mounting.
+*Keep in mind the default ghost docker image creates a [volume](https://github.com/docker-library/ghost/blob/83cacc75655bf26aae65465d66fd1b981e9203d5/3/alpine/Dockerfile#L66) at the `$GHOST_CONTENT` path. This means any changes after the `VOLUME` declaration will be discarded, and you can't add new files to the content dir. You will need to install to another path, or move the files during a run time script after volume mounting.*
 
 ### Configuration
 #### JSON via [ghost config](https://ghost.org/docs/concepts/config/)
-```js
+```json
 {
     "storage": {
         "active": "gcs",
@@ -79,7 +81,7 @@ Keep in mind that the default ghost docker image creates a [volume](https://gith
 ```
 
 #### ENV Variables
-```bash
+```sh
 storage__active=gcs
 storage__gcs__bucket=my-gcs-bucket
 storage__gcs__host=storage.googleapis.com
@@ -91,12 +93,12 @@ storage__gcs__hashLength=16
 
 ### Authentication
 The easiest way to authenticate is to use a service account key and set the [application default credentials](https://cloud.google.com/docs/authentication/production) environment variable:
-```
+```sh
 GOOGLE_APPLICATION_CREDENTIALS=/var/secrets/google/key.json
 ```
 
 You can also pass in a custom credential key file path or credentials object via the `storageOptions` setting, see [here](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions):
-```js
+```json
 {
     "storage": {
         "active": "gcs",
