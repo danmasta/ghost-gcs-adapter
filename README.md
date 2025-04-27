@@ -82,13 +82,13 @@ If you want to pin to a specific [version](https://github.com/danmasta/ghost-gcs
 
 #### ENV Variables
 ```sh
-storage__active=gcs
-storage__gcs__bucket=my-gcs-bucket
-storage__gcs__host=storage.googleapis.com
-storage__gcs__protocol=https
-storage__gcs__hash=true
-storage__gcs__hashAlgorithm=sha512
-storage__gcs__hashLength=16
+adapters__storage__active=gcs
+adapters__storage__gcs__bucket=my-gcs-bucket
+adapters__storage__gcs__host=storage.googleapis.com
+adapters__storage__gcs__protocol=https
+adapters__storage__gcs__hash=true
+adapters__storage__gcs__hashAlgorithm=sha512
+adapters__storage__gcs__hashLength=16
 ```
 
 ### Authentication
