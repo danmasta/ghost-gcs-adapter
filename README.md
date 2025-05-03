@@ -147,7 +147,7 @@ GCS_ADAPTER_VERSION=v1.0.2
 
 ## Configuration
 ### JSON via [Ghost Config](https://ghost.org/docs/config/#storage-adapters)
-```json
+```js
 {
     "storage": {
         "active": "gcs",
