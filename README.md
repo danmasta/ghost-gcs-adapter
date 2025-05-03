@@ -56,7 +56,7 @@ Option | Description | Example
 `ghost` | Defer to ghost's [`getUniqueSecureFilePath`](https://github.com/TryGhost/Ghost-Storage-Base/blob/5dbd3825845c2de36f2d5bc57a20235deb80f0e4/BaseStorage.js#L43) method | `logo-1a2b3c4d5e6f7890.png`
 `custom` | Use custom user defined template | `[hash][random][ext]`
 
-When the `filename` option is set to `custom`, it will use the `template` option and interpolate values from the file object properties plus a couple extra names. The available fields are:
+When the `filename` option is set to `custom`, it will use the `template` option and interpolate values from the file object properties plus a couple extra fields. The available fields are:
 
 #### Images and Media:
 ```js
@@ -94,7 +94,7 @@ When the `filename` option is set to `custom`, it will use the `template` option
 ### Sanitization
 There is some default sanitization of file names that always takes place and a couple optional features like removing diacritics and lowercasing.
 
-The default sanitization includes removing XML control characters and GCS wildcard characters as noted [here](https://cloud.google.com/storage/docs/objects#naming) in the GCS documentation. It will also replace all whitespace with hypens, and convert all back slashes to forward slashes.
+The default sanitization includes removing XML control characters and GCS wildcard characters, as described in the GCS [docs](https://cloud.google.com/storage/docs/objects#naming). It will also replace all whitespace with hyphens, and convert all back slashes to forward slashes.
 
 ### Adapters
 This package exposes multiple storage adapter entrypoints for each content type (files, images, media). You can configure each one separately and use different backend buckets, prefixes, CDNs, hosts, etc. Or send them all to the same place, it's up to you.
