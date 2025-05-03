@@ -3,10 +3,9 @@ node_modules/
 tmp/
 build/
 coverage/
-.elasticbeanstalk/
 .nyc_output/
-.secrets/
 .DS_Store
 .idea
 .log
 .vscode
+.secrets/
