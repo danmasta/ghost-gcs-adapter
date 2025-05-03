@@ -19,7 +19,7 @@
   "files": [
     "files.js",
     "images.js",
-    "index.js",
+    "index.mjs",
     "media.js",
     "dist/**/*",
     "lib/**/*",
