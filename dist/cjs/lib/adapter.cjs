@@ -12,21 +12,20 @@ const { NotFoundError, BadRequestError, NoPermissionError, InternalServerError, 
 
 const defs = {
     bucket: undefined,
-    protocol: 'https', // (http or https)
+    protocol: 'https',
     host: 'storage.googleapis.com',
-    storage: undefined, // https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions
+    storage: undefined,
     hash: false,
     hashAlgorithm: 'md5',
     hashLength: 16,
     prefix: undefined,
-    unique: true,
     template: undefined,
     deburr: true,
     lowercase: true,
     signed: false,
-    expires: 24 * 60 * 60 * 1000, // (24 hours in milliseconds), max = 7 days
-    filename: undefined, // (hash | unique | hashunique | ghost | custom)
-    virtual: true, // enable virtual hosted style
+    expires: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+    filename: 'original',
+    virtual: true,
     passthrough: true,
     type: 'images'
 };
