@@ -7,13 +7,13 @@ Google Cloud Storage adapter for [ghost](https://github.com/TryGhost/Ghost) CMS
 * Custom protocol and host settings for CDN use
 * Custom GCS [storage options](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions) configuration
 * Hashing support and algorithm configuration
-* Multiple methods supported for generating unique file names and hashes
+* Multiple options for generating unique file names and hashes
 * Custom file name templating
 * Sanitization of file names
 * Support for removing diacritics
 * Passthrough mode for hosting files from your ghost server
 * Support for signed URLs
-* Typed adapters for all content types (files, images, media)
+* Multiple [adapters](#adapters) for all content types (files, images, media)
 * Works for ghost versions v4.x and v5.x
 
 ## About
@@ -77,7 +77,6 @@ There are [3 places](https://github.com/TryGhost/Ghost/blob/2d9443f89f12ccb26520
 This means you need to install the plugin and it's dependencies at one of these locations. If you are using a `Dockerfile`, you can do so like:
 ```dockerfile
 ARG GCS_ADAPTER_VERSION="master"
-
 RUN mkdir -p /tmp/gcs && \
     curl -fsSL "https://api.github.com/repos/danmasta/ghost-gcs-adapter/tarball/${GCS_ADAPTER_VERSION}" | tar xz --strip-components=1 -C /tmp/gcs && \
     npm install --prefix /tmp/gcs --omit=dev --omit=optional --no-progress --loglevel error && \
