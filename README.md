@@ -5,18 +5,19 @@ Google Cloud Storage adapter for [ghost](https://github.com/TryGhost/Ghost) CMS
 * Easy to use
 * Bucket and path prefix configuration
 * Custom protocol and host settings for CDN use
-* Custom GCS [storage options](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions) configuration
+* Custom GCS client [configuration](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions)
 * Hashing support and algorithm configuration
 * Multiple options for generating unique file names and hashes
 * Custom file name templating
 * Sanitization of file names
 * Support for removing diacritics
-* Passthrough mode for hosting files from your ghost server
-* Support for signed URLs
-* Multiple [adapters](#adapters) for all content types (files, images, media)
+* [Passthrough](#passthrough) mode for hosting files from your ghost backend
+* Support for using [signed URLs](#signed-urls)
+* Multiple [adapters](#adapters) for each content type (files, images, media)
 * Works for ghost versions v4.x and v5.x
 
 ## About
+[Storage adapter](https://ghost.org/docs/config/#storage-adapters) for ghost CMS that allows you to store (and serve) content from GCS. Supports many configurable options including path prefixes, custom domains, CDNs, content hashing, file name templating, network passthrough, and signed URLs.
 
 ## Usage
 ### Options
@@ -33,38 +34,96 @@ Name | Type | Description
 `template` | *`string`* | Template string for file name templating. If `hash` is `true` default is: `[hash][ext]`, otherwise: `[name][ext]`
 `deburr` | *`boolean`* | Enable removal of diacritic marks. Default is `true`
 `lowercase` | *`boolean`* | Convert all characters in the file name to lowercase. Default is `true`
-`signed` | *`boolean`* | Enable using [signed URLs](https://cloud.google.com/storage/docs/access-control/signed-urls). Default is `false`
+`signed` | *`boolean`* | Enable using [signed URLs](#signed-urls). Default is `false`
 `expires` | *`number`* | Expiration time for signed URLs in milliseconds. Max value is 7 days. Default is `86400000` (24 hours)
 `filename` | *`string`* | File name generation method. Options are: `original`, `originalhash`, `hash`, `unique`, `hashunique`, `random`, `ghost`, `custom`. Setting to `custom` will enable using the `template` option. Default is `original`
 `virtual` | *`boolean`* | Enable using virtual hosted-style URLs (bucket name in host name) when serving from GCS. Default is `true`
-`passthrough` | *`boolean`* | Enable serving files from your ghost server. Returned URLs are absolute based on your content path. All requested files get proxied from your ghost backend to GCS. Enables you to host files from private buckets. Default is `true`
+`passthrough` | *`boolean`* | Enable serving files from your ghost backend. Returned URLs are absolute based on your content path. All requested files get proxied from your ghost backend to GCS. Enables you to host files from private buckets. Default is `true`
 `type` | *`string`* | Which [storage type](https://ghost.org/docs/config/#available-storage-features) to use. One of: `files`, `images`, `media`. Default is `images`
 
-
-<!-- `unique` | *`boolean`* | Wether or not to create unique filenames for duplicate uploads. Default is `true`
-`incremental` | *`boolean`* | If `true` and `unique` is enabled it will use the ghost default incremental algorithm for file names, appending an integer to the basename. This can be really slow because it has to check if the filepath exists in the bucket for each iteration. If `false` and `unique` is enabled it will just append random bytes to either the hash or the basename. Default is `false` -->
-
 ## Features
-### Filenames
+### File Names
+You can configure file name generation a couple different ways. The simplest is using one of the pre-defined `filename` options:
+
+Option | Description | Example
+-------|-------------|--------
+`original` | Keep the original file name | `logo.png`
+`originalhash` | Original file name plus content hash | `logo-8b9d311d1039d23c.png`
+`hash` | Content hash | `8b9d311d1039d23c.png`
+`unique` | Original file name plus random bytes | `logo-0369f2920cec69db.png`
+`hashunique` | Hash of content plus random bytes | `9ddf4fa107affb71.png`
+`random` | Random bytes | `2a6ffa69076df2e1.png`
+`ghost` | Defer to ghost's [`getUniqueSecureFilePath`](https://github.com/TryGhost/Ghost-Storage-Base/blob/5dbd3825845c2de36f2d5bc57a20235deb80f0e4/BaseStorage.js#L43) method | `logo-1a2b3c4d5e6f7890.png`
+`custom` | Use custom user defined template | `[hash][random][ext]`
+
+When the `filename` option is set to `custom`, it will use the `template` option and interpolate values from the file object properties plus a couple extra names. The available fields are:
+
+#### Images and Media:
+```js
+{
+    fieldname: 'file',
+    originalname: 'logo.png',
+    encoding: '7bit',
+    mimetype: 'image/png',
+    destination: '/tmp',
+    filename: '944dbf135c0ae2618c9c6d7981a5142d',
+    path: '/tmp/944dbf135c0ae2618c9c6d7981a5142d_processed',
+    size: 201125,
+    name: 'logo',
+    type: 'image/png',
+    ext: '.png',
+    dir: 'images/2025/05',
+    base: 'logo.png',
+    hash,
+    random
+}
+```
+#### Files:
+```js
+{
+    name: 'logo',
+    path: '/tmp/536984b3a2e4407135a829d402d2a01b',
+    dir: 'files/2025/05',
+    ext: '.png',
+    base: 'logo.png',
+    hash,
+    random
+}
+```
+
 ### Sanitization
-There is some default sanitization of file names that always happens and a couple optional features like ascii folding and lowercasing.
+There is some default sanitization of file names that always takes place and a couple optional features like removing diacritics and lowercasing.
 
-The default sanitization includes removing xml control characters and GCS wildcard characters as noted [here](https://cloud.google.com/storage/docs/objects#naming) in the GCS documentation. It will also replace all whitespace with hypens, and convert all back slashes to forward slashes.
-
-### Signed URLs
-
-### Passthrough
+The default sanitization includes removing XML control characters and GCS wildcard characters as noted [here](https://cloud.google.com/storage/docs/objects#naming) in the GCS documentation. It will also replace all whitespace with hypens, and convert all back slashes to forward slashes.
 
 ### Adapters
-This package exposes multiple storage adapter entrypoints for each storage type (files, images, media). You can configure each one separately and store to different backend buckets, prefixes, CDNs, hosts, etc. Or send them all to the same place, it's up to you.
+This package exposes multiple storage adapter entrypoints for each content type (files, images, media). You can configure each one separately and use different backend buckets, prefixes, CDNs, hosts, etc. Or send them all to the same place, it's up to you.
 
-When configuring the adapter name to use, you can use any of:
+When configuring an adapter, you can use any of the following names:
 * `gcs`
 * `gcs/files`
 * `gcs/images`
 * `gcs/media`
 
 You can configure all 3 through ghost config or env variables. You can see examples here in [config.json](tests/config.json) and [.env](tests/.env).
+
+### Passthrough
+Passthrough mode allows you to serve files like they were hosted directly on your ghost backend. It returns URLs that look like:
+```
+/content/images/2025/05/logo.png
+```
+When ghost receives a request for that URL, it is passed to the adapter's `serve()` handler, which will then lookup the file in GCS and stream the content back to the user. This is a highly flexible option that also allows you to serve content from private buckets. It's great for prototyping, testing, or lower traffic environments like dev, staging, etc.
+
+A caveat, though, is that caching is entirely dependent on the user's browser configuration. And all bytes transmitted this way will incur network costs from your hosting provider, which are usually much higher than serving content from a CDN. For high traffic sites this can increase your network traffic usage quite a bit.
+
+### Signed URLs
+Using [signed URLs](https://cloud.google.com/storage/docs/access-control/signed-urls) is another way to serve sensitive and/or private content. It works by returning absolute signed URLs from GCS, which look [like](https://cloud.google.com/storage/docs/access-control/signed-urls#example):
+```
+https://storage.googleapis.com/example-bucket/content/images/2025/05/logo.png?X-Goog-Signature=SIGNATURE
+```
+A caveat here is that signed URLs are time limited and expire after a maximum of 7 days. After that they stop working and there is no way to refresh the file URLs in ghost currently.
+
+It's a good option for short lived testing environments where you might want time limited URLs that expire. It's also good for local testing or prototyping with sensitive content you don't want public. Because of the expiring nature of the URLs, it's not really viable for long term production site usage, unless you want to manually delete and re-upload the files when they expire.
 
 ## Installation
 There are [3 places](https://github.com/TryGhost/Ghost/blob/2d9443f89f12ccb26520f52be23df1118be960c2/ghost/core/core/server/services/adapter-manager/index.js#L8) ghost will look for storage adapters:
@@ -73,7 +132,6 @@ There are [3 places](https://github.com/TryGhost/Ghost/blob/2d9443f89f12ccb26520
 /var/lib/ghost/content/adapters/storage
 /var/lib/ghost/current/core/server/adapters/storage
 ```
-
 This means you need to install the plugin and it's dependencies at one of these locations. If you are using a `Dockerfile`, you can do so like:
 ```dockerfile
 ARG GCS_ADAPTER_VERSION="master"
@@ -94,12 +152,12 @@ GCS_ADAPTER_VERSION=v1.0.2
     "storage": {
         "active": "gcs",
         "gcs": {
-            "bucket": "bucket-name",
+            "bucket": "example-bucket",
             "host": "storage.googleapis.com",
             "protocol": "https",
             "filename": "hash",
             "hashAlgorithm": "sha512",
-            "hashLength": "16"
+            "hashLength": 16
         }
     }
 }
@@ -108,7 +166,7 @@ GCS_ADAPTER_VERSION=v1.0.2
 ### Environment Variables
 ```sh
 storage__active=gcs
-storage__gcs__bucket=bucket-name
+storage__gcs__bucket=example-bucket
 storage__gcs__host=storage.googleapis.com
 storage__gcs__protocol=https
 storage__gcs__filename=hash
@@ -117,18 +175,20 @@ storage__gcs__hashLength=16
 ```
 
 ### Authentication
-The easiest way to authenticate is to use a service account key and set the [application default credentials](https://cloud.google.com/docs/authentication/production) environment variable:
+The easiest way to authenticate is to use a service account key and set the [application default credentials](https://cloud.google.com/docs/authentication#adc) environment variable:
 ```sh
 GOOGLE_APPLICATION_CREDENTIALS=/var/secrets/google/key.json
 ```
 
 You can also pass in a custom credential key file path or credentials object via the `storage` setting, see [here](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions):
-```json
+```js
 {
     "storage": {
         "active": "gcs",
         "gcs": {
-            "storage": { ... }
+            "storage": {
+                ...
+            }
         }
     }
 }
