@@ -125,6 +125,8 @@ A caveat here is that signed URLs are time limited and expire after a maximum of
 
 It's a good option for short lived testing environments where you might want time limited URLs that expire. It's also good for local testing or prototyping with sensitive content you don't want public. Because of the expiring nature of the URLs, it's not really viable for long term production site usage, unless you want to manually delete and re-upload the files when they expire.
 
+*Note: If testing signed URLs locally, you will need to authenticate as a [service account](#service-accounts)*
+
 ## Installation
 There are [3 places](https://github.com/TryGhost/Ghost/blob/2d9443f89f12ccb26520f52be23df1118be960c2/ghost/core/core/server/services/adapter-manager/index.js#L8) ghost will look for storage adapters:
 ```
@@ -179,7 +181,6 @@ The easiest way to authenticate is to use a service account key and set the [app
 ```sh
 GOOGLE_APPLICATION_CREDENTIALS=/var/secrets/google/key.json
 ```
-
 You can also pass in a custom credential key file path or credentials object via the `storage` setting, see [here](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions):
 ```js
 {
@@ -193,9 +194,23 @@ You can also pass in a custom credential key file path or credentials object via
     }
 }
 ```
+### Service Accounts
+If you want to generate signed URLs, you need to be authenticated as a [service account](https://cloud.google.com/iam/docs/service-account-overview). User ADC credentials don't work. This means you need to either download a service account key json file from the cloud console and configure that as the ADC credentials, or use [service account impersonation](https://cloud.google.com/iam/docs/service-account-impersonation). To use service account impersonation locally, you can run:
+```sh
+gcloud auth application-default login --impersonate-service-account $SERVICE_ACCOUNT_EMAIL
+```
+*Note: You will need to have the [`Service Account Token Creator`](https://cloud.google.com/docs/authentication/use-service-account-impersonation#required-roles) role in gcloud IAM. It is not enabled by default, even for project owners*
+
+You can use the [default](https://cloud.google.com/iam/docs/service-account-types#default) service account, or create a new one. Then just make sure it has permissions to access the bucket you want to use.
 
 ## Testing
 Tests are currently run using mocha and chai. To execute tests run `make test`. To generate unit test coverage reports run `make coverage`
+
+### Ghost
+If you want to test the adapter locally with ghost, you can run `make run` to start a ghost container with the adapter mounted inside. It will also mount your default gcloud ADC credentials. So if you are already authenticated with glcoud CLI, you just need to pass a bucket name as an argument or set it via the environment variable `GCS_TEST_BUCKET`.
+```sh
+make run BUCKET=example-bucket
+```
 
 ## Contact
 If you have any questions feel free to get in touch
