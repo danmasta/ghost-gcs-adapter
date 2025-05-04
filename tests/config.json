@@ -1,0 +1,40 @@
+{
+    "url": "http://localhost:2368",
+    "server": {
+        "port": 2368,
+        "host": "::"
+    },
+    "mail": {
+        "transport": "Direct"
+    },
+    "logging": {
+        "transports": [
+            "file",
+            "stdout"
+        ]
+    },
+    "process": "systemd",
+    "paths": {
+        "contentPath": "/var/lib/ghost/content"
+    },
+    "storage": {
+        "active": "gcs",
+        "gcs": {
+            "bucket": null,
+            "filename": "unique",
+            "passthrough": true
+        },
+        "files": "gcs/files",
+        "gcs/files": {
+            "bucket": null,
+            "filename": "hashunique",
+            "passthrough": true
+        },
+        "media": "gcs/media",
+        "gcs/media": {
+            "bucket": null,
+            "filename": "originalhash",
+            "passthrough": true
+        }
+    }
+}
