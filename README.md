@@ -27,10 +27,10 @@ Name | Type | Description
 `protocol` | *`string`* | Protocol to use for absolute URLs. Default is `https`
 `host` | *`string`* | Host to use for absolute URLs. This can be your domain, CDN host name, load balancer IP address, etc. Default is `storage.googleapis.com`
 `storage` | *`object`* | Custom [storage options](https://googleapis.dev/nodejs/storage/latest/global.html#StorageOptions) for configuring the underlying GCS client. Default is `undefined`
-`hash` | *`boolean`* | Wether or not to generate a hash from file contents. Only used to set the file name template if not defined. Default is `false`
+`hash` | *`boolean`* | Whether or not to generate a hash from file contents. Only used to set the file name template if not defined. Default is `false`
 `hashAlgorithm` | *`string`* | Algorithm to use when generating hashes. Default is `md5`
 `hashLength` | *`number`* | Length of hash to use in hash string output. Slice is taken from the end of the string. Setting `0` will use the full hash. Default is `16`
-`prefix` | *`string`* | Prefix to use for file path. If set, the GCS file path will become: `PREFIX/TYPE/DIR/NAME`. Default is `undefined`
+`prefix` | *`string`* | Prefix to use for GCS object path. If set, the GCS file path will become: `PREFIX/TYPE/DIR/NAME`. Default is `undefined`
 `template` | *`string`* | Template string for file name templating. If `hash` is `true` default is: `[hash][ext]`, otherwise: `[name][ext]`
 `deburr` | *`boolean`* | Enable removal of diacritic marks. Default is `true`
 `lowercase` | *`boolean`* | Convert all characters in the file name to lowercase. Default is `true`
@@ -40,6 +40,7 @@ Name | Type | Description
 `virtual` | *`boolean`* | Enable using virtual hosted-style URLs (bucket name in host name) when serving from GCS. Default is `true`
 `passthrough` | *`boolean`* | Enable serving files from your ghost backend. Returned URLs are absolute based on your content path. All requested files get proxied from your ghost backend to GCS. Enables you to host files from private buckets. Default is `true`
 `type` | *`string`* | Which [storage type](https://ghost.org/docs/config/#available-storage-features) to use. One of: `files`, `images`, `media`. Default is `images`
+`addPrefixToURL` | *`string`* | Whether or not to also include prefix in URLs. Default is `false`
 
 ## Features
 ### File Names
