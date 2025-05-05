@@ -38,16 +38,16 @@ build: mkdir clean
 watch: mkdir clean
 	node_modules/.bin/rollup -c -w
 
-start:
+start: build
 	@docker run -d $(DOCKER_ARGS) ghost:$(VERSION)
 
 stop:
 	@docker stop $(NAME) && docker rm $(NAME)
 
-run:
+run: build
 	@docker run --rm -it $(DOCKER_ARGS) ghost:$(VERSION)
 
-exec:
+exec: build
 	@docker run --rm -it $(DOCKER_ARGS) --entrypoint= ghost:$(VERSION) $(ARGS)
 
 version: status
