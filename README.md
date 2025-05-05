@@ -67,8 +67,8 @@ When the `filename` option is set to `custom`, it will use the `template` option
     encoding: '7bit',
     mimetype: 'image/png',
     destination: '/tmp',
-    filename: '944dbf135c0ae2618c9c6d7981a5142d',
-    path: '/tmp/944dbf135c0ae2618c9c6d7981a5142d_processed',
+    filename: '8c9c6d7981a5142d',
+    path: '/tmp/8c9c6d7981a5142d_processed',
     size: 201125,
     name: 'logo',
     type: 'image/png',
@@ -83,7 +83,7 @@ When the `filename` option is set to `custom`, it will use the `template` option
 ```js
 {
     name: 'logo',
-    path: '/tmp/536984b3a2e4407135a829d402d2a01b',
+    path: '/tmp/35a829d402d2a01b',
     dir: 'files/2025/05',
     ext: '.png',
     base: 'logo.png',
