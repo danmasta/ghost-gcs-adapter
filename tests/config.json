@@ -21,19 +21,19 @@
         "active": "gcs",
         "gcs": {
             "bucket": null,
-            "filename": "unique",
+            "filename": "hash",
             "passthrough": true
         },
         "files": "gcs/files",
         "gcs/files": {
             "bucket": null,
-            "filename": "hashunique",
+            "filename": "hash",
             "passthrough": true
         },
         "media": "gcs/media",
         "gcs/media": {
             "bucket": null,
-            "filename": "originalhash",
+            "filename": "hash",
             "passthrough": true
         }
     }

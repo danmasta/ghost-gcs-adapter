@@ -34,7 +34,9 @@ const img = {
     }
 };
 
-const gcs = new GCSAdapter({ bucket });
+const gcs = new GCSAdapter({
+    bucket
+});
 
 beforeEach(() => {
     global.assert = assert;
@@ -42,4 +44,5 @@ beforeEach(() => {
     global.should = should();
     global.GCSAdapter = GCSAdapter;
     global.gcs = gcs;
+    global.bucket = bucket;
 });
