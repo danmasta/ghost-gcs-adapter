@@ -59,7 +59,7 @@ Option | Description | Example
 
 When the `filename` option is set to `custom`, it will use the `template` option and interpolate values from the file object properties plus a couple extra fields. The available fields are:
 
-#### Images and Media:
+#### Images, Media:
 ```js
 {
     fieldname: 'file',
