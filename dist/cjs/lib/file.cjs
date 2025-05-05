@@ -1,3 +1,4 @@
+var lo = require('lo');
 var node_buffer = require('node:buffer');
 var node_crypto = require('node:crypto');
 var node_fs = require('node:fs');
@@ -9,13 +10,41 @@ var util = require('./util.cjs');
 
 class GCSFile {
 
-    // Requires at least file.name to exist
-    constructor (file, gcs, dir, type) {
+    // Note: Requires at least file.name to exist
+    constructor (file, gcs, _dir, url) {
         if (!file || !gcs) {
             throw new util.GCSAdapterError('File object and Adapter instance are required');
         }
-        let { opts } = gcs;
-        file.dir = node_path.join(opts.prefix, type ?? opts.type, dir ?? gcs.getTargetDir());
+        let { contentPath } = gcs;
+        let { bucket, prefix, type, passthrough, addPrefixToURL, addBucketToURL } = gcs.opts;
+        let dir = _dir ?? file.dir;
+        if (dir) {
+            dir = lo.split(dir, constants.REGEX.path);
+            if ((passthrough && !url) || dir[0] === contentPath) {
+                if (dir[0] === contentPath) {
+                    dir.shift();
+                }
+                if (dir[0] === type) {
+                    dir.shift();
+                }
+                if (prefix && addPrefixToURL && dir[0] === prefix) {
+                    dir.shift();
+                }
+            } else {
+                if (addBucketToURL && dir[0] === bucket) {
+                    dir.shift();
+                }
+                if (prefix && addPrefixToURL && dir[0] === prefix) {
+                    dir.shift();
+                }
+                if (dir[0] === type) {
+                    dir.shift();
+                }
+            }
+            file.dir = node_path.join(...dir);
+        } else {
+            file.dir = gcs.getTargetDir();
+        }
         if (!file.ext) {
             file.ext = node_path.extname(file.name);
         }
@@ -29,9 +58,9 @@ class GCSFile {
         this.local = !!file.path;
     }
 
-    // Create gcs file instance from a path string
+    // Create GCS file instance from a path string
     // Eg: '/size/w1000/2025/05/962ddac76cbed183.png'
-    static FromPath (path, gcs, target) {
+    static fromPath (path, gcs, _dir) {
         if (!path) {
             throw new util.GCSAdapterError('Path is required');
         }
@@ -40,47 +69,39 @@ class GCSFile {
             base,
             name,
             ext,
-            path: null
-        }, gcs, target || dir);
+            path: null,
+            dir
+        }, gcs, _dir);
     }
 
-    // Create gcs file instance from a file object
+    // Create GCS file instance from a file object
     // Eg: { name: 'logo.png', path: '/tmp/1dcfb58793ac8c55126faf8f0baed066' }
-    static FromFile (file, gcs, dir) {
+    static fromFile (file, gcs, dir) {
         return new GCSFile(file, gcs, dir);
     }
 
-    // Create gcs file instance from a URL (serve path) string
+    // Create GCS file instance from a URL (serve path) string
     // Eg: http://localhost:2368/content/media/2025/05/ac7eda454295301a.mp4
     // Eg: /content/images/2025/05/7a472491071c0b5c.png
-    static FromURL (urlOrPath, gcs) {
+    static fromURL (urlOrPath, gcs) {
         if (!urlOrPath) {
             throw new util.GCSAdapterError('URL is required');
         }
-        let { contentPath } = gcs;
-        let { bucket, passthrough, addBucketToPath, type } = gcs.opts;
-        let url;
+        let url, abs;
         if (urlOrPath.includes('://')) {
             url = new node_url.URL(urlOrPath);
+            abs = true;
         } else {
             url = node_url.pathToFileURL(urlOrPath);
         }
         let { dir, base, name, ext } = node_path.parse(url.pathname);
-        if (passthrough && dir.indexOf(contentPath) === 1) {
-            dir = dir.slice(contentPath.length + 1);
-        }
-        if (addBucketToPath && dir.indexOf(bucket) === 1) {
-            dir = dir.slice(bucket.length + 1);
-        }
-        if (dir.indexOf(type) === 1) {
-            dir = dir.slice(type.length + 1);
-        }
         return new GCSFile({
             base,
             name,
             ext,
-            path: null
-        }, gcs, dir, '');
+            path: null,
+            dir
+        }, gcs, undefined, abs);
     }
 
     // Get serve path (return path for ghost)
@@ -95,47 +116,7 @@ class GCSFile {
         return this.absolute();
     }
 
-    // Absolute path to gcs bucket or hostname
-    absolute () {
-        let { file, gcs, computed } = this;
-        let { protocol, host, bucket, addBucketToPath } = gcs.opts;
-        let proto = protocol + '://';
-        if (computed) {
-            if (addBucketToPath) {
-                return proto + node_path.join(host, bucket, computed);
-            } else {
-                return proto + node_path.join(host, computed);
-            }
-        }
-        if (addBucketToPath) {
-            return gcs.sanitize(proto + node_path.join(host, bucket, file.dir, file.base));
-        } else {
-            return gcs.sanitize(proto + node_path.join(host, file.dir, file.base));
-        }
-    }
-
-    // Relative path in gcs
-    // Note: Does not include content path
-    relative () {
-        let { file, gcs, computed } = this;
-        if (computed) {
-            return computed;
-        }
-        return gcs.sanitize(node_path.join(file.dir, file.base));
-    }
-
-    // Absolute url path for serving from ghost content path
-    // Note: Includes content path
-    // Note: Needs to be absolute otherwise path will be relative to ghost admin
-    passthrough () {
-        let { file, gcs, computed } = this;
-        if (computed) {
-            return '/' + node_path.join(gcs.contentPath, computed);
-        }
-        return gcs.sanitize('/' + node_path.join(gcs.contentPath, file.dir, file.base));
-    }
-
-    // Absolute gcs signed url
+    // Absolute GCS signed URL
     // https://cloud.google.com/storage/docs/access-control/signed-urls
     // https://googleapis.dev/nodejs/storage/latest/File.html#getSignedUrl
     // Note: Regular ADC crendentials won't work. You need to either
@@ -157,7 +138,52 @@ class GCSFile {
         return url;
     }
 
-    // Write to gcs from local path
+    // Absolute URL path for serving from ghost content path
+    // Note: Includes content path
+    // Note: Needs to be absolute otherwise path will be relative to ghost admin
+    passthrough () {
+        let { file, gcs, computed } = this;
+        let { dir, base } = file;
+        let { contentPath } = gcs;
+        let { type, prefix, addPrefixToURL } = gcs.opts;
+        let path = [contentPath, type];
+        // Note: Optionally add prefix to URL path
+        if (prefix && addPrefixToURL) {
+            path.push(prefix);
+        }
+        path.push(dir, computed || base);
+        return gcs.sanitize('/' + node_path.join(...path));
+    }
+
+    // Absolute path to GCS bucket or hostname
+    absolute () {
+        let { file, gcs, computed } = this;
+        let { dir, base } = file;
+        let { type, prefix, protocol, host, bucket, virtual, addBucketToURL, addPrefixToURL } = gcs.opts;
+        let path = [host];
+        // Note: Only needed for GCS paths
+        if (addBucketToURL) {
+            path.push(bucket);
+        }
+        // Note: Optionally add prefix to URL path (Required for GCS paths)
+        if (prefix && addPrefixToURL) {
+            path.push(prefix);
+        }
+        path.push(type, dir, computed || base);
+        return gcs.sanitize(protocol + '://' + node_path.join(...path));
+    }
+
+    // Relative object path in GCS
+    // Note: Does not include content path
+    relative () {
+        let { file, gcs, computed } = this;
+        let { dir, base } = file;
+        let { prefix, type } = gcs.opts;
+        // Note: Always add prefix to GCS object path
+        return gcs.sanitize(node_path.join(prefix, type, dir, computed || base));
+    }
+
+    // Write to GCS from local path
     async upload () {
         await this.getComputedName();
         await promises.pipeline(
@@ -166,13 +192,13 @@ class GCSFile {
         );
     }
 
-    // Check if file exists in gcs
+    // Check if file exists in GCS
     async exists () {
         let [exists] = await this.gcsFile().exists();
         return exists;
     }
 
-    // Read from gcs to buffer
+    // Read from GCS to Buffer
     async read () {
         let res = [];
         await promises.pipeline(
@@ -186,12 +212,12 @@ class GCSFile {
         return node_buffer.Buffer.concat(res);
     }
 
-    // Write to gcs from buffer
+    // Write to GCS from Buffer
     async write (buffer) {
         return this.gcsFile().save(buffer);
     }
 
-    // Delete from gcs
+    // Delete from GCS
     async delete () {
         return this.gcsFile().delete();
     }
@@ -232,7 +258,7 @@ class GCSFile {
 
     async getComputedName () {
         let { file, gcs } = this;
-        let { filename, template, hashLength } = gcs.opts;
+        let { filename, template } = gcs.opts;
         let { name, base, dir, ext } = file;
         switch (filename) {
             // Keep original name
@@ -271,6 +297,7 @@ class GCSFile {
             }
             // Defer to ghost default method
             case 'ghost': {
+                // Note: Adds dir to basename, need to remove
                 [file.name, file.base] = [file.base, file.name];
                 base = gcs.getUniqueSecureFilePath(file, dir);
                 [file.name, file.base] = [file.base, file.name];
@@ -295,15 +322,15 @@ class GCSFile {
                 break;
             }
         }
-        return this.computed = gcs.sanitize(node_path.join(dir, base));
+        return this.computed = base;
     }
 
 }
 
-const { FromPath, FromFile, FromURL } = GCSFile;
+const { fromPath, fromFile, fromURL } = GCSFile;
 
-exports.FromFile = FromFile;
-exports.FromPath = FromPath;
-exports.FromURL = FromURL;
 exports.GCSFile = GCSFile;
 exports.default = GCSFile;
+exports.fromFile = fromFile;
+exports.fromPath = fromPath;
+exports.fromURL = fromURL;

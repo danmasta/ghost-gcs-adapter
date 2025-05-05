@@ -7,6 +7,8 @@ const REGEX = {
     gcs: /[\[\]*?#]/g,
     whitespace: /\s+/g,
     slash: /(?<!:)\/\/+|\\+/g,
-    tpl: /\[([^\[\]]+)\]/g};
+    tpl: /\[([^\[\]]+)\]/g,
+    path: /[\\/]+/g
+};
 
 exports.REGEX = REGEX;

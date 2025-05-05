@@ -27,7 +27,8 @@ const defs = {
     filename: 'original',
     virtual: true,
     passthrough: true,
-    type: 'images'
+    type: 'images',
+    addPrefixToURL: false
 };
 
 class GCSAdapter extends StorageAdapterBase {
@@ -48,30 +49,39 @@ class GCSAdapter extends StorageAdapterBase {
         if (!opts.host) {
             opts.host = defs.host;
         }
+        opts.addBucketToURL = false;
         if (opts.host === defs.host) {
+            opts.addPrefixToURL = true;
             if (opts.virtual) {
                 opts.host = opts.bucket + '.' + opts.host;
+            } else {
+                opts.addBucketToURL = true;
             }
         }
-        opts.addBucketToPath = !opts.virtual;
+        if (opts.signed) {
+            opts.addPrefixToURL = true;
+            if (!opts.virtual) {
+                opts.addBucketToURL = true;
+            }
+        }
         this.contentPath = config.get('paths:contentPath') ?? 'content';
         this.storage = new storage.Storage(opts.storage);
         this.bucket = this.storage.bucket(opts.bucket);
     }
 
     fromPath (path, dir) {
-        return file.FromPath(path, this, dir);
+        return file.fromPath(path, this, dir);
     }
 
     fromFile (file$1, dir) {
-        return file.FromFile(file$1, this, dir);
+        return file.fromFile(file$1, this, dir);
     }
 
     fromURL (url) {
-        return file.FromURL(url, this);
+        return file.fromURL(url, this);
     }
 
-    // Check if file exists in gcs
+    // Check if file exists in GCS
     // Accepts a file path/name and optional target dir
     // Returns Boolean
     // Note: Used by image size (srcset) middleware
@@ -81,7 +91,7 @@ class GCSAdapter extends StorageAdapterBase {
         return file.exists();
     }
 
-    // Read file from gcs as buffer
+    // Read file from GCS as Buffer
     // Accepts a file path/name
     // Returns Buffer
     // Note: Used by image size (srcset) middleware
@@ -95,7 +105,7 @@ class GCSAdapter extends StorageAdapterBase {
         }
     }
 
-    // Save file to gcs
+    // Save file to GCS
     // Accepts a file object and optional target dir
     // Returns the computed path String to serve file from
     // Note: Example in LocalStorageBase class:
@@ -110,8 +120,8 @@ class GCSAdapter extends StorageAdapterBase {
         }
     }
 
-    // Save a raw buffer to gcs
-    // Acceps a file buffer and file path/name
+    // Save a raw Buffer to GCS
+    // Acceps a file Buffer and file path/name
     // Returns the computed path String to serve file from
     // Note: Used by image size (srcset) middleware
     // https://github.com/TryGhost/Ghost/blob/80aa346307fd3e6e57465cebdde4a8a292c722f3/ghost/core/core/frontend/web/middleware/handle-image-sizes.js#L135
@@ -125,7 +135,7 @@ class GCSAdapter extends StorageAdapterBase {
         }
     }
 
-    // Delete file from gcs
+    // Delete file from GCS
     // Accepts a file path/name and optional target dir
     // Returns Undefined or throws Error on failure
     // Note: Used in media handler
@@ -135,13 +145,18 @@ class GCSAdapter extends StorageAdapterBase {
         try {
             await file.delete();
         } catch (err) {
+            // Note: Ignore Not Found error until media handler is patched
+            // https://github.com/TryGhost/Ghost/pull/23156
+            if (err.code === 404) {
+                return;
+            }
             throw new util.GCSAdapterError(err.message);
         }
     }
 
-    // Serve gcs files from content path
+    // Serve GCS files from content path
     // Note: Serve handler only gets called on getContentPath(TYPE)
-    // If we enable passthrough and return urls other than contentPath/TYPE (absolute)
+    // If we enable passthrough and return URLs other than contentPath/TYPE (absolute)
     // this route handler will not get called
     serve () {
         const gcs = this;
@@ -179,9 +194,9 @@ class GCSAdapter extends StorageAdapterBase {
         }
     }
 
-    // Convert a file computed serve url to gcs relative path
+    // Convert a computed serve url to GCS relative path
     // Accepts a computed serve url (returned from save, saveRaw)
-    // Returns a gcs relative path
+    // Returns a GCS relative path
     // Note: Used in media and image handlers
     // https://github.com/TryGhost/Ghost/blob/6af4d8f01df657ad9ba425f7ac78b50d0088068d/ghost/core/core/server/api/endpoints/media.js#L39
     // https://github.com/TryGhost/Ghost/blob/6af4d8f01df657ad9ba425f7ac78b50d0088068d/ghost/core/core/server/api/endpoints/images.js#L61
@@ -190,7 +205,7 @@ class GCSAdapter extends StorageAdapterBase {
         return file.relative();
     }
 
-    // Sanitize file paths for gcs
+    // Sanitize file paths for GCS
     // https://cloud.google.com/storage/docs/objects#naming
     sanitize (str='') {
         const { opts } = this;
