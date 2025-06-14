@@ -38,9 +38,9 @@ Name | Type | Description
 `expires` | *`number`* | Expiration time for signed URLs in milliseconds. Max value is 7 days. Default is `86400000` (24 hours)
 `filename` | *`string`* | File name generation method. Options are: `original`, `originalhash`, `hash`, `unique`, `hashunique`, `random`, `ghost`, `custom`. Setting to `custom` will enable using the `template` option. Default is `original`
 `virtual` | *`boolean`* | Enable using virtual hosted-style URLs (bucket name in host name) when serving from GCS. Default is `true`
-`passthrough` | *`boolean`* | Enable serving files from your ghost backend. Returned URLs are absolute based on your content path. All requested files get proxied from your ghost backend to GCS. Enables you to host files from private buckets. Default is `true`
+`passthrough` | *`boolean`* | Enable serving files from your ghost backend. Returned URLs are absolute based on your content path. All requested files get proxied from your ghost backend to GCS. Enables you to host files from private buckets. Default is `false`
 `type` | *`string`* | Which [storage type](https://ghost.org/docs/config/#available-storage-features) to use. One of: `files`, `images`, `media`. Default is `images`
-`addPrefixToURL` | *`string`* | Whether or not to also include prefix in URLs. Default is `false`
+`addPrefixToURL` | *`boolean`* | Whether or not to also include prefix in URLs. Default is `false`
 
 ## Features
 ### File Names
